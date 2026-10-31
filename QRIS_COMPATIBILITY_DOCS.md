@@ -126,3 +126,90 @@ Anda bisa langsung mengetes kecocokan aplikasi ini di ponsel Anda tanpa perlu me
 
 * **Anti Transaksi Ganda (Deduplication):** Aplikasi menggunakan algoritma MD5 hashing untuk mendinginkan notifikasi serupa dalam window 30 detik untuk mencegah pemicuan ganda (double-triggering) jika notifikasi muncul berulang di system drawer.
 * **Auto-Retry & WorkManager:** Jika koneksi server Anda down atau offline saat webhook dikirim, aplikasi mengantrekan request tersebut ke latar belakang menggunakan Android `WorkManager` yang akan mencobanya lagi secara otomatis setelah kondisi internet pulih.
+
+---
+
+## 🔨 7. Panduan Build & Install Aplikasi
+
+Aplikasi ini dapat di-build baik melalui **Terminal (CLI)** maupun menggunakan **Android Studio**.
+
+### A. Prasyarat Sistem
+* **Java**: OpenJDK 17
+* **Android SDK**: Terpasang Android SDK Platform (API 34/35/36) dan Build-Tools
+* **ADB**: `platform-tools` terpasang dan dapat diakses dari terminal
+* **Perangkat Android**: HP Android fisik (disarankan) atau Emulator dengan **USB Debugging** aktif
+
+---
+
+### B. Build & Install via Terminal (CLI)
+
+Pastikan Anda berada di direktori root project:
+```bash
+cd /home/w_rohman/htdocs/perusahaan/gbd-payment-gateway/Notif-Listener
+```
+
+1. **Pastikan script Gradle memiliki izin eksekusi:**
+   ```bash
+   chmod +x ./gradlew
+   ```
+
+2. **Opsi 1: Build & Langsung Install ke HP yang Terhubung:**
+   ```bash
+   ./gradlew installDebug
+   ```
+
+3. **Opsi 2: Hanya Membuat File APK (tanpa install langsung):**
+   ```bash
+   ./gradlew assembleDebug
+   ```
+   File APK hasil build akan berada di:
+   ```
+   app/build/outputs/apk/debug/app-debug.apk
+   ```
+   Untuk menginstall file APK tersebut ke HP:
+   ```bash
+   adb install app/build/outputs/apk/debug/app-debug.apk
+   ```
+
+4. **Menjalankan Aplikasi dari Terminal:**
+   ```bash
+   adb shell am start -n com.aistudio.qrisbridge.fuxmqs/com.example.MainActivity
+   ```
+
+5. **Memantau Log Notifikasi & Webhook Secara Real-time:**
+   ```bash
+   adb logcat -s QrisListenerService:D PaymentParser:D WebhookClient:D
+   ```
+
+---
+
+### C. Build via Android Studio
+
+1. Buka **Android Studio**.
+2. Pilih **Open** dan arahkan ke folder project ini.
+3. Tunggu hingga proses **Gradle Sync** selesai.
+4. Pastikan Build Variant yang aktif adalah **`debug`**.
+5. Pilih perangkat HP Anda di bagian toolbar atas, lalu klik tombol **Run** (`▶`) atau tekan `Shift + F10`.
+
+---
+
+### D. Catatan Khusus Perangkat (Troubleshooting & Reliability)
+
+#### 1. Perangkat Xiaomi / Redmi (MIUI / HyperOS):
+* **Izin USB Linux (Udev Rules):** Jika `adb devices` menampilkan status *no permissions*, tambahkan rule udev Xiaomi (`idVendor: 2717`):
+  ```bash
+  echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2717", MODE="0666", GROUP="plugdev"' | sudo tee /etc/udev/rules.d/51-android.rules
+  sudo udevadm control --reload-rules && sudo udevadm trigger
+  adb kill-server && adb start-server
+  ```
+* **Developer Options di HP:**
+  * Aktifkan **Install via USB**.
+  * Aktifkan **USB debugging (Security settings)**.
+* **Agar Service Tidak Dimatikan Sistem:**
+  * Masuk ke **Info Aplikasi > Autostart (Mulai Otomatis)** ➔ Aktifkan.
+  * Masuk ke **Penghemat Baterai (Battery Saver)** ➔ Pilih **No Restrictions (Tidak Ada Pembatasan)**.
+
+#### 2. Izin Akses Notifikasi (Wajib untuk Semua Merk HP):
+* Masuk ke **Pengaturan > Notifikasi > Akses Notifikasi (Notification Access)**.
+* Aktifkan izin untuk **QRIS Notification Bridge** / **Notif-Listener**.
+
